@@ -28,9 +28,19 @@ url_regex = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-
 
 
 def load_data(database_filepath):
-    #engine = create_engine('sqlite:///data/DisasterResponse.db')
+    """
+    Loads data from the database and defines variables for the upcoming part
+    
+    Parameters:
+    - Filepath where database is stored
+    
+    Returns:
+    - A Pandas Series with column 'messages' from the dataframe
+    - A dataframe with the 36 'categories' columns
+    - A list with the names of the 36 'categories' columns
+    """
+    
     engine = create_engine('sqlite:///' + database_filepath)
-    # "sqlite:///data/DisasterResponse.db"
     df = pd.read_sql_table(table_name="disaster_messages_table", con='sqlite:///' + database_filepath)
 
     X = df['message']
@@ -40,6 +50,16 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """
+    Processes text data
+    
+    Parameters:
+    - Text data, in this case entries from the Pandas Series 'messages'
+    
+    Returns:
+    - A list with words of the input sentence
+    """
+    
     detected_urls = re.findall(url_regex, text)
     for url in detected_urls:
         text = text.replace(url, "urlplaceholder")
@@ -55,23 +75,56 @@ def tokenize(text):
 
 
 def build_model():
-    pipeline = Pipeline([
-        ('vect', CountVectorizer(tokenizer=tokenize)),
-        ('tfidf', TfidfTransformer()),
-        ('clf', MultiOutputClassifier(RandomForestClassifier(n_estimators=50)))
+    """
+    Builds the machine learning pipeline which takes in the message column as input and outputs classification results on the other 36
+    categories in the dataset
+    
+    Parameters:
+    - None
+    
+    Returns:
+    - The built machine learning pipeline
+    """
+    
+    pipeline = Pipeline([       
+        ('vect', CountVectorizer(tokenizer=tokenize, max_features=5000)),
+        ('tfidf', TfidfTransformer(smooth_idf=False)),
+        ('clf', MultiOutputClassifier(RandomForestClassifier(n_estimators=50, min_samples_split=2)))
     ])
     return pipeline
 
 
 def evaluate_model(pipeline, X_test, Y_test, category_names):
+    """
+    Reports the f1 score, precision and recall for each output category of the dataset.
+    
+    Parameters:
+    - The built machine learning pipeline
+    - The two test-DataFrames from the train-test-split
+    - A list with words of the input sentence
+    
+    Returns:
+    - None (The classification_report is only printed)
+    """
+
     Y_pred = pipeline.predict(X_test)
     Y_test_np = Y_test.values
     print(classification_report(Y_test_np, Y_pred, target_names=category_names))
 
 
 def save_model(model, model_filepath):
+    """
+    Saves the model (ML pipeline) into a pickle file
+    
+    Parameters:
+    - The model (ML pipeline)
+    - Filepath where pickle file should be stored
+    
+    Returns:
+    - None
+    """
+        
     with open(model_filepath, 'wb') as model_file:
-        # 'model.pkl'
         pickle.dump(model, model_file)
 
 

@@ -5,6 +5,17 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+    """
+    Loads two datasets and merges the datasets using the common id
+    
+    Parameters:
+    - Filepath of disaster messages csv-file
+    - Filepath of disaster categories csv-file
+    
+    Returns:
+    - Merged dataframe df
+    """
+    
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     df = pd.merge(messages, categories, how="left", on="id")
@@ -12,6 +23,16 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    """
+    Cleans the dataset. Column 'categories' is split into 36 separated columns
+
+    Parameters:
+    - Uncleaned dataframe df
+    
+    Returns:
+    - Cleaned dataframe df
+    """
+    
     df_cat = df.categories.str.split(pat=";", expand=True)
 
     row = df_cat.head(1)
@@ -32,6 +53,16 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    """
+    Saves the clean dataset into a sqlite database
+    
+    Parameters:
+    - Cleaned dataframe df
+    - Filepath where database should be stored
+    
+    Returns:
+    - None
+    """
     engine = create_engine('sqlite:///' + database_filename)
     df.to_sql('disaster_messages_table', engine, index=False)
     
