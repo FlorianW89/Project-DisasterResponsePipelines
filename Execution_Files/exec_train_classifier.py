@@ -86,12 +86,20 @@ def build_model():
     - The built machine learning pipeline
     """
     
-    pipeline = Pipeline([       
+    pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize, max_features=5000)),
         ('tfidf', TfidfTransformer(smooth_idf=False)),
-        ('clf', MultiOutputClassifier(RandomForestClassifier(n_estimators=50, min_samples_split=2)))
+        ('clf', MultiOutputClassifier(RandomForestClassifier()))
     ])
-    return pipeline
+    
+    parameters = {
+        'clf__estimator__n_estimators': [10, 50],
+        'clf__estimator__min_samples_split': [2, 3, 4]
+    }
+    
+    cv = GridSearchCV(pipeline, param_grid=parameters , verbose=3)
+    
+    return cv
 
 
 def evaluate_model(pipeline, X_test, Y_test, category_names):
